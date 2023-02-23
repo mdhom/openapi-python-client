@@ -50,24 +50,36 @@ class EnumProperty(Property):
         return imports
 
     @staticmethod
-    def values_from_list(values: Union[List[str], List[int]]) -> Dict[str, ValueType]:
+    def values_from_list(values: Union[List[str], List[int]], data: oai.Schema) -> Dict[str, ValueType]:
         """Convert a list of values into dict of {name: value}, where value can sometimes be None"""
         output: Dict[str, ValueType] = {}
 
+        names: list[str] = None
+        if "x-enumNames" in data.__dict__:
+            names = data.__dict__['x-enumNames']
+
         for i, value in enumerate(values):
-            value = cast(Union[str, int], value)
-            if isinstance(value, int):
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+
+            if names is not None:
+                key = names[i]
+            elif isinstance(value, int):
                 if value < 0:
-                    output[f"VALUE_NEGATIVE_{-value}"] = value
+                    key = f"VALUE_NEGATIVE_{-value}"
                 else:
-                    output[f"VALUE_{value}"] = value
-                continue
-            if value and value[0].isalpha():
-                key = value.upper()
+                    key = f"VALUE_{value}"
             else:
-                key = f"VALUE_{i}"
+                if value and value[0].isalpha():
+                    key = value.upper()
+                else:
+                    key = f"VALUE_{i}"
+                key = utils.snake_case(key).upper()
+                value = utils.remove_string_escapes(value)
+
             if key in output:
                 raise ValueError(f"Duplicate key {key} in Enum")
-            sanitized_key = utils.snake_case(key).upper()
-            output[sanitized_key] = utils.remove_string_escapes(value)
+            output[key] = value
         return output

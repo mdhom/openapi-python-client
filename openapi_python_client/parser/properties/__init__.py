@@ -404,7 +404,7 @@ def build_enum_property(
             ),
             schemas,
         )
-    values = EnumProperty.values_from_list(value_list)
+    values = EnumProperty.values_from_list(value_list, data)
 
     if class_info.name in schemas.classes_by_name:
         existing = schemas.classes_by_name[class_info.name]
