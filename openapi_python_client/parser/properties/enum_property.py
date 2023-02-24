@@ -12,7 +12,7 @@ from .schemas import Class
 
 ValueType = Union[str, int]
 
-ValidEnumNamesProperties = ["x-enumNames", "x-enumnames", "x-enum-varnames", "x-enumvarnames"]
+ValidEnumNamesProperties = ["x-enumNames", "x-enumnames", "x-ms-enum", "x-enum-varnames"]
 
 IsIntegerPattern = re.compile(r"\d*")
 
