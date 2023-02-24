@@ -3,6 +3,7 @@ __all__ = ["EnumProperty"]
 from typing import Any, ClassVar, Dict, List, Optional, Set, Type, Union, cast
 
 import attr
+import re
 
 from ... import schema as oai
 from ... import utils
@@ -10,6 +11,14 @@ from .property import Property
 from .schemas import Class
 
 ValueType = Union[str, int]
+
+ValidEnumNamesProperties = ["x-enumNames", "x-enumnames", "x-enum-varnames", "x-enumvarnames"]
+
+IsIntegerPattern = re.compile(r"\d*")
+
+def __is_integer(value):
+    match = IsIntegerPattern.match(value)
+    return match and match.group(0) == value
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -55,23 +64,27 @@ class EnumProperty(Property):
         output: Dict[str, ValueType] = {}
 
         names: list[str] = None
-        if "x-enumNames" in data.__dict__:
-            names = data.__dict__['x-enumNames']
+        for enum_name in ValidEnumNamesProperties:
+            if enum_name in data.__dict__:
+                names = data.__dict__[enum_name]
+                break
 
         for i, value in enumerate(values):
-            try:
+            # try cast value to integer for supporting IntEnum generation
+            if __is_integer(value):
                 value = int(value)
-            except ValueError:
-                pass
 
             if names is not None:
+                # names are given in x-... property
                 key = names[i]
             elif isinstance(value, int):
+                # no name given, integer enum
                 if value < 0:
                     key = f"VALUE_NEGATIVE_{-value}"
                 else:
                     key = f"VALUE_{value}"
             else:
+                # no name given, string enum
                 if value and value[0].isalpha():
                     key = value.upper()
                 else:
